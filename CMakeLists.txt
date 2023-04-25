@@ -3,4 +3,4 @@ project(operating_system_pipes)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(operating_system_pipes main.cpp)
+add_executable(operating_system_pipes main.c)
