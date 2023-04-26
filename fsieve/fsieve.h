@@ -9,6 +9,10 @@
 #include <sys/types.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <stdarg.h>
+
+#define LOG_OUTPUT fopen("log.txt", "a+")
+#define END_SEQUENCE -1
 
 /**
  * Struct holding every data used in a pipe.
@@ -60,5 +64,11 @@ void send_data(struct pipe pipe, fsieve_data data);
  * @return the data received
  */
 fsieve_data recv_data(struct pipe pipe);
+
+/**
+ * util function used to log data.
+ * @param str The data to log
+ */
+int log(char *str, ...);
 
 #endif //OPERATING_SYSTEM_PIPES_FSIEVE_H
