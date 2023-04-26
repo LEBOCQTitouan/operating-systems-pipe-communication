@@ -1,6 +1,20 @@
-#include <iostream>
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include "fsieve/fsieve.h"
 
 int main() {
-    std::cout << "Hello, World!" << std::endl;
-    return 0;
+    struct pipe data_pipe;
+    data_pipe = create_pipe();
+
+    create_child_with_communication(child_routine, data_pipe);
+
+    fsieve_data sample = {0};
+    int *data = {0, 1, 2, 4, 6};
+
+    sample.size = 4;
+    sample.data_array = data;
+    send_data(data_pipe, sample);
+
+    return EXIT_SUCCESS;
 }
