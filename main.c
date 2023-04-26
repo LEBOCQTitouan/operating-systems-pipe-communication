@@ -12,7 +12,7 @@ int main() {
     fsieve_data sample = {0};
     int data[] = {0, 1, 2, 4, 6};
 
-    sample.size = 4;
+    sample.size = 5;
     sample.data_array = data;
     send_data(data_pipe, sample);
 

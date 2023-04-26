@@ -52,20 +52,29 @@ void send_data(struct pipe pipe, fsieve_data data) {
         exit(EXIT_FAILURE);
     }
     write(pipe.writing_end, &end, sizeof(int));
-    // close(pipe.writing_end);
+    close(pipe.writing_end);
 }
 
 fsieve_data recv_data(struct pipe pipe) {
     fsieve_data data = {0};
-    do {
+
+    int buffer = 0;
+    if (read(pipe.reading_end, &buffer, sizeof(int)) < 0) {
+        perror("read");
+        exit(EXIT_FAILURE);
+    }
+
+    while (buffer != END_SEQUENCE) {
         data.size++;
-        data.data_array = realloc(data.data_array, data.size);
-        if (read(pipe.reading_end, data.data_array + (data.size - 1) ,sizeof(int)) < 0) {
+        data.data_array = realloc(data.data_array, sizeof(int) * data.size);
+        data.data_array[data.size - 1] = buffer;
+
+        if (read(pipe.reading_end, &buffer, sizeof(int)) < 0) {
             perror("read");
             exit(EXIT_FAILURE);
         }
-    } while (data.data_array[data.size - 1] != -1);
-    // close(pipe.reading_end);
+    }
+
     return data;
 }
 
