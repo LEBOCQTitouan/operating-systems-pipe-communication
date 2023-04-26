@@ -5,13 +5,33 @@
 #include "fsieve.h"
 
 void child_routine(struct pipe pipe) {
-    int current_pid = getpid();
-    printf("[child] started successfully (%d)\n", &current_pid);
-    fsieve_data data = recv_data(pipe);
-    for (int i = 0; i < data.size; ++i) {
-        printf("%d\n", data.data_array[i]);
+    int pid = 0;
+    struct pipe child_pipe;
+    fsieve_data processed_data = recv_data(pipe);
+    fsieve_data new_data = {0};
+
+    printf("%d\n", processed_data.prime_number);
+
+    for (int i = 0; i < processed_data.size; ++i) {
+        int current = processed_data.data_array[i];
+        if (current % processed_data.prime_number != 0) {
+            if (new_data.prime_number == 0) { // new prime number not yet found
+                new_data.prime_number = current;
+            } else {
+                new_data.size++;
+                new_data.data_array = realloc(new_data.data_array, sizeof(int) * new_data.size);
+                new_data.data_array[new_data.size - 1] = current;
+            }
+        }
     }
-    printf("[child] %d ended\n", &current_pid);
+    if (new_data.prime_number > 0) {
+        child_pipe = create_pipe();
+        create_child_with_communication(child_routine, child_pipe);
+        send_data(child_pipe, new_data);
+        wait(NULL);
+    }
+
+    exit(EXIT_SUCCESS);
 }
 
 pid_t create_child_with_communication(void (*routine)(struct pipe), struct pipe communication_pipe) {
@@ -47,10 +67,17 @@ struct pipe create_pipe() {
 
 void send_data(struct pipe pipe, fsieve_data data) {
     int end = END_SEQUENCE;
+    // sending prime number
+    if (write(pipe.writing_end, &data.prime_number, sizeof(int)) < 0) {
+        perror("write");
+        exit(EXIT_FAILURE);
+    }
+    // sending list of number
     if (write(pipe.writing_end, data.data_array, sizeof(int) * data.size) < 0) {
         perror("write");
         exit(EXIT_FAILURE);
     }
+    // sending end sequence
     write(pipe.writing_end, &end, sizeof(int));
     close(pipe.writing_end);
 }
@@ -59,6 +86,15 @@ fsieve_data recv_data(struct pipe pipe) {
     fsieve_data data = {0};
 
     int buffer = 0;
+    if (read(pipe.reading_end, &buffer, sizeof(int)) < 0) {
+        perror("read");
+        exit(EXIT_FAILURE);
+    }
+
+    if (buffer == END_SEQUENCE) // empty data
+        return data;
+
+    data.prime_number = buffer;
     if (read(pipe.reading_end, &buffer, sizeof(int)) < 0) {
         perror("read");
         exit(EXIT_FAILURE);

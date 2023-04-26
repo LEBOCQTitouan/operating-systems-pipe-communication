@@ -14,6 +14,8 @@
 #define LOG_OUTPUT fopen("log.txt", "a+")
 #define END_SEQUENCE -1
 
+#define MAX_VAL 100
+
 /**
  * Struct holding every data used in a pipe.
  */
@@ -27,8 +29,9 @@ typedef struct pipe {
  * Struct holding every data used in fsieve lib.
  */
 typedef struct fsieve_data {
-    int size;       // size of the data array
-    int *data_array;// the data array
+    int size;           // size of the data array
+    int prime_number;   // the prime number used as filter
+    int *data_array;    // the data array
 } fsieve_data;
 
 /**
@@ -52,7 +55,7 @@ pid_t create_child_with_communication(void (*routine)(struct pipe), struct pipe 
 struct pipe create_pipe();
 
 /**
- * Function used to send @fsieve_data through a @pipe
+ * Function used to send @fsieve_data through a @pipe.The first element sent will be the prime number.
  * @param pipe the communication @pipe
  * @param data the data sent
  */

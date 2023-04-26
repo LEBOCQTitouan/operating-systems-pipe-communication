@@ -10,10 +10,16 @@ int main() {
     create_child_with_communication(child_routine, data_pipe);
 
     fsieve_data sample = {0};
-    int data[] = {0, 1, 2, 4, 6};
 
-    sample.size = 5;
+    int *data = calloc(sizeof(int), MAX_VAL - 2);
+    for (int i = 0; i < MAX_VAL - 2; ++i) {
+        data[i] = i + 3;
+    }
+
+    sample.size = MAX_VAL - 2;
     sample.data_array = data;
+    sample.prime_number = 2;
+
     send_data(data_pipe, sample);
 
     wait(NULL);
