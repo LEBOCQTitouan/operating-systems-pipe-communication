@@ -4,10 +4,10 @@
 
 #include "fsieve.h"
 
-void child_routine(struct pipe pipe) {
+void child_routine_async(struct pipe pipe) {
     int pid = 0;
     struct pipe child_pipe;
-    fsieve_data processed_data = recv_data(pipe);
+    fsieve_data processed_data = recv_data_array(pipe);
     fsieve_data new_data = {0};
 
     printf("%d\n", processed_data.prime_number);
@@ -26,11 +26,48 @@ void child_routine(struct pipe pipe) {
     }
     if (new_data.prime_number > 0) {
         child_pipe = create_pipe();
-        create_child_with_communication(child_routine, child_pipe);
-        send_data(child_pipe, new_data);
+        create_child_with_communication(child_routine_async, child_pipe);
+        send_data_array(child_pipe, new_data);
         wait(NULL);
     }
 
+    exit(EXIT_SUCCESS);
+}
+
+void child_routine_sync(struct pipe pipe) {
+    int pid = 0;
+    int data_buffer;
+    int prime_number;
+    struct pipe child_pipe;
+
+    data_buffer = recv_data(pipe);
+    if (data_buffer == END_SEQUENCE)
+        exit(EXIT_SUCCESS);
+    prime_number = data_buffer;
+    printf("Prime number found: %d\n", prime_number);
+
+    data_buffer = recv_data(pipe);
+    if (data_buffer == END_SEQUENCE)
+        exit(EXIT_SUCCESS);
+    do {
+        if (data_buffer % prime_number != 0) {
+            if (pid == 0) { // new prime number not yet found
+                child_pipe = create_pipe();
+                pid = create_child_with_communication(child_routine_sync, child_pipe);
+                send_data(child_pipe, data_buffer);
+            } else {
+                send_data(child_pipe, data_buffer);
+            }
+        }
+        data_buffer = recv_data(pipe);
+    } while (data_buffer != END_SEQUENCE);
+    send_data(child_pipe, END_SEQUENCE);
+
+    if (pid != 0) {
+        close(pipe.reading_end);
+        close(child_pipe.writing_end);
+        wait(NULL);
+    }
     exit(EXIT_SUCCESS);
 }
 
@@ -43,7 +80,6 @@ pid_t create_child_with_communication(void (*routine)(struct pipe), struct pipe 
     }
     if (pid == 0) { // starting child routine
         routine(communication_pipe);
-        wait(NULL);
         exit(EXIT_SUCCESS);
     }
 
@@ -65,7 +101,7 @@ struct pipe create_pipe() {
     return new_pipe;
 }
 
-void send_data(struct pipe pipe, fsieve_data data) {
+void send_data_array(struct pipe pipe, fsieve_data data) {
     int end = END_SEQUENCE;
     // sending prime number
     if (write(pipe.writing_end, &data.prime_number, sizeof(int)) < 0) {
@@ -82,7 +118,14 @@ void send_data(struct pipe pipe, fsieve_data data) {
     close(pipe.writing_end);
 }
 
-fsieve_data recv_data(struct pipe pipe) {
+void send_data(struct pipe pipe, int data) {
+    if (write(pipe.writing_end, &data, sizeof(int)) < 0) {
+        perror("write");
+        exit(EXIT_FAILURE);
+    }
+}
+
+fsieve_data recv_data_array(struct pipe pipe) {
     fsieve_data data = {0};
 
     int buffer = 0;
@@ -114,13 +157,12 @@ fsieve_data recv_data(struct pipe pipe) {
     return data;
 }
 
-int log(char *str, ...) {
-    va_list args;
+int recv_data(struct pipe pipe) {
+    int buffer = 0;
+    if (read(pipe.reading_end, &buffer, sizeof(int)) < 0) {
+        perror("read");
+        exit(EXIT_FAILURE);
+    }
 
-    va_start(args, str);
-    int rc = fprintf(LOG_OUTPUT, str, args);
-    fprintf(LOG_OUTPUT, "\n");
-    va_end(args);
-
-    return rc;
+    return buffer;
 }

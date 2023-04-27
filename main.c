@@ -7,7 +7,7 @@ int main() {
     struct pipe data_pipe;
     data_pipe = create_pipe();
 
-    create_child_with_communication(child_routine, data_pipe);
+    create_child_with_communication(child_routine_sync, data_pipe);
 
     fsieve_data sample = {0};
 
@@ -20,8 +20,7 @@ int main() {
     sample.data_array = data;
     sample.prime_number = 2;
 
-    send_data(data_pipe, sample);
-
+    send_data_array(data_pipe, sample);
     wait(NULL);
 
     return EXIT_SUCCESS;

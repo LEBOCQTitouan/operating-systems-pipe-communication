@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-#define LOG_OUTPUT fopen("log.txt", "a+")
 #define END_SEQUENCE -1
 
 #define MAX_VAL 100
@@ -35,10 +34,16 @@ typedef struct fsieve_data {
 } fsieve_data;
 
 /**
- * Basic child routine for the fsieve library.
+ * Basic async child routine for the fsieve library.
  * @param pipe the pipe which will be used for communication
  */
-void child_routine(struct pipe pipe);
+void child_routine_async(struct pipe pipe);
+
+/**
+ * Basic sync child routine for the fsieve library.
+ * @param pipe the pipe which will be used for communication
+ */
+void child_routine_sync(struct pipe pipe);
 
 /**
  * Function creating a child wich will execute a @routine
@@ -59,19 +64,27 @@ struct pipe create_pipe();
  * @param pipe the communication @pipe
  * @param data the data sent
  */
-void send_data(struct pipe pipe, fsieve_data data);
+void send_data_array(struct pipe pipe, fsieve_data data);
+
+/**
+ * Function used to send data through a @pipe
+ * @param pipe the communication @pipe
+ * @param data the data sent
+ */
+void send_data(struct pipe pipe, int data);
 
 /**
  * Function used to receive @fsieve_data from a @pipe
  * @param pipe the communication @pipe
  * @return the data received
  */
-fsieve_data recv_data(struct pipe pipe);
+fsieve_data recv_data_array(struct pipe pipe);
 
 /**
- * util function used to log data.
- * @param str The data to log
+ * Function used to receive data from a @pipe
+ * @param pipe the communication @pipe
+ * @return the data received
  */
-int log(char *str, ...);
+int recv_data(struct pipe pipe);
 
 #endif //OPERATING_SYSTEM_PIPES_FSIEVE_H
